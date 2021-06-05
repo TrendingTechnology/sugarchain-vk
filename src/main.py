@@ -20,6 +20,15 @@ def getAddressByWIF(wif):
     return address.to_string()
 
 
+async def getBalance(address):
+    session = ClientSession()
+    response = await session.get(f"https://api.sugarchain.org/balance/{address}")
+    data = json.loads(await response.text())
+    balance = data["result"]["balance"]
+    await session.close()
+    return balance
+
+
 def getStorage():
     file = open("storage.json")
     data = file.read()
@@ -32,6 +41,8 @@ def editStorage(data):
     file.write(str(data).replace("'", '"'))
     file.close()
 
+
+states = {}
 
 TOKEN = os.environ["TOKEN"]
 constants.NETWORK_SEGWIT_PREFIXES["mainnet"] = "sugar"
@@ -59,15 +70,32 @@ async def wallets(message: Message):
         storage["users"][str(message.peer_id)] = {"wallets": []}
         editStorage(storage)
     wallets = storage["users"][str(message.peer_id)]["wallets"]
-    text = f'{locale["ru"]["wallets"]}\n'
+    text = f'{locale["ru"]["wallets"]}\n\n'
     for wallet in wallets:
-        text += f"{wallet}\n"
+        address = getAddressByWIF(wallet)
+        balance = await getBalance(address)
+        text += f"{wallet} ({address}:{balance})\n\n"
     await message.answer(text, keyboard=KEYBOARD_WALLETS_RU)
+
+
+@bot.on.message(text="Добавить")
+async def add(message: Message):
+    states[message.peer_id] = "add"
+    await message.answer(locale["ru"]["add"])
 
 
 @bot.on.message()
 async def common(message: Message):
-    await message.answer(locale["ru"]["common"], keyboard=KEYBOARD_COMMON_RU)
+    if message.peer_id in states and states[message.peer_id] == "add":
+        storage = getStorage()
+        if str(message.peer_id) not in storage["users"]:
+            storage["users"][str(message.peer_id)] = {"wallets": []}
+        storage["users"][str(message.peer_id)]["wallets"].append(message.text)
+        editStorage(storage)
+        del states[message.peer_id]
+        await message.answer(locale["ru"]["success_add"])
+    else:
+        await message.answer(locale["ru"]["common"], keyboard=KEYBOARD_COMMON_RU)
 
 
 bot.run_forever()

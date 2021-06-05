@@ -65,35 +65,51 @@ async def currency(message: Message):
 
 @bot.on.message(text="Мои кошельки")
 async def wallets(message: Message):
+    peer = str(message.peer_id)
     storage = getStorage()
-    if str(message.peer_id) not in storage["users"]:
-        storage["users"][str(message.peer_id)] = {"wallets": []}
+    if peer not in storage["users"]:
+        storage["users"][peer] = {"wallets": []}
         editStorage(storage)
-    wallets = storage["users"][str(message.peer_id)]["wallets"]
+    wallets = storage["users"][peer]["wallets"]
     text = f'{locale["ru"]["wallets"]}\n\n'
     for wallet in wallets:
         address = getAddressByWIF(wallet)
         balance = await getBalance(address)
-        text += f"{wallet} ({address}:{balance})\n\n"
+        text += f"{wallet} ({address}:{balance / 1e8})\n\n"
     await message.answer(text, keyboard=KEYBOARD_WALLETS_RU)
 
 
 @bot.on.message(text="Добавить")
 async def add(message: Message):
-    states[message.peer_id] = "add"
+    peer = str(message.peer_id)
+    states[peer] = "add"
+    await message.answer(locale["ru"]["add"])
+
+
+@bot.on.message(text="Удалить")
+async def remove(message: Message):
+    peer = str(message.peer_id)
+    states[peer] = "remove"
     await message.answer(locale["ru"]["add"])
 
 
 @bot.on.message()
 async def common(message: Message):
-    if message.peer_id in states and states[message.peer_id] == "add":
+    peer = str(message.peer_id)
+    if peer in states:
         storage = getStorage()
-        if str(message.peer_id) not in storage["users"]:
-            storage["users"][str(message.peer_id)] = {"wallets": []}
-        storage["users"][str(message.peer_id)]["wallets"].append(message.text)
-        editStorage(storage)
-        del states[message.peer_id]
-        await message.answer(locale["ru"]["success_add"])
+        if peer not in storage["users"]:
+            storage["users"][peer] = {"wallets": []}
+        if states[peer] == "add":
+            storage["users"][peer]["wallets"].append(message.text)
+            editStorage(storage)
+            del states[peer]
+            await message.answer(locale["ru"]["success_add"])
+        if states[peer] == "remove":
+            storage["users"][peer]["wallets"].remove(message.text)
+            editStorage(storage)
+            del states[peer]
+            await message.answer(locale["ru"]["success_remove"])
     else:
         await message.answer(locale["ru"]["common"], keyboard=KEYBOARD_COMMON_RU)
 

@@ -20,6 +20,7 @@ KEYBOARD_WALLETS_RU.add(
     Text(locale["ru"]["keyboard_wallets"]["remove"]), KeyboardButtonColor.NEGATIVE
 )
 KEYBOARD_WALLETS_RU.row()
+"""
 KEYBOARD_WALLETS_RU.add(
     Text(locale["ru"]["keyboard_wallets"]["edit"]), KeyboardButtonColor.PRIMARY
 )
@@ -29,6 +30,7 @@ KEYBOARD_WALLETS_RU.add(
     KeyboardButtonColor.SECONDARY,
 )
 KEYBOARD_WALLETS_RU.row()
+"""
 KEYBOARD_WALLETS_RU.add(
     Text(locale["ru"]["keyboard_wallets"]["back"]), KeyboardButtonColor.NEGATIVE
 )

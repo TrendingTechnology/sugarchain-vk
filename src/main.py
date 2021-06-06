@@ -110,6 +110,7 @@ async def common(message: Message):
                 getAddressByWIF(wallet)
             except ValueError:
                 await message.answer("Вы ввели неверный адрес")
+                del states[peer]
                 return
             storage["users"][peer]["wallets"].append(wallet)
             editStorage(storage)
@@ -121,6 +122,7 @@ async def common(message: Message):
                 getAddressByWIF(wallet)
             except ValueError:
                 await message.answer("Вы ввели неверный адрес")
+                del states[peer]
                 return
             storage["users"][peer]["wallets"].remove(wallet)
             editStorage(storage)

@@ -73,7 +73,11 @@ async def wallets(message: Message):
     wallets = storage["users"][peer]["wallets"]
     text = f'{locale["ru"]["wallets"]}\n\n'
     for wallet in wallets:
-        address = getAddressByWIF(wallet)
+        try:
+            address = getAddressByWIF(wallet)
+        except ValueError:
+            await message.answer("Вы ввели неверный адрес")
+            return
         balance = await getBalance(address)
         text += f"{wallet} ({address}:{balance / 1e8})\n\n"
     await message.answer(text, keyboard=KEYBOARD_WALLETS_RU)
@@ -101,12 +105,24 @@ async def common(message: Message):
         if peer not in storage["users"]:
             storage["users"][peer] = {"wallets": []}
         if states[peer] == "add":
-            storage["users"][peer]["wallets"].append(message.text)
+            wallet = message.text
+            try:
+                getAddressByWIF(wallet)
+            except ValueError:
+                await message.answer("Вы ввели неверный адрес")
+                return
+            storage["users"][peer]["wallets"].append(wallet)
             editStorage(storage)
             del states[peer]
             await message.answer(locale["ru"]["success_add"])
         if states[peer] == "remove":
-            storage["users"][peer]["wallets"].remove(message.text)
+            wallet = message.text
+            try:
+                getAddressByWIF(wallet)
+            except ValueError:
+                await message.answer("Вы ввели неверный адрес")
+                return
+            storage["users"][peer]["wallets"].remove(wallet)
             editStorage(storage)
             del states[peer]
             await message.answer(locale["ru"]["success_remove"])
